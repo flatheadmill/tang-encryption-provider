@@ -1,0 +1,16 @@
+{
+    "private": true,
+    "name": "unpublished",
+    "dependencies": {
+        "jose": "4.5.1",
+        "axios": "0.26.0",
+        "get-stdin": "8.0.0",
+        "ec-pem": "0.18.0",
+        "asn1.js": "5.4.1",
+        "eckey-utils": "0.7.13",
+        "elliptic": "6.5.4",
+        "base64url": "3.0.1",
+        "comeuppance": "0.0.3",
+        "node-jose": "2.1.0"
+    }
+}
