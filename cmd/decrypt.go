@@ -102,11 +102,11 @@ type jsonProtected struct {
 	EphemeralPublicKey jose.JSONWebKey `json:"epk"`
 }
 
-func main() {
-	input, err := ioutil.ReadAll(os.Stdin)
-	if err != nil {
-		panic(err)
-	}
+type Crypter struct {
+}
+
+func (c *Crypter) Decrypt(jwe string) ([]byte, error) {
+	input := []byte(jwe)
 	dot := bytes.IndexByte(input, byte('.'))
 	header, err := base64.RawURLEncoding.DecodeString(string(input[0:dot]))
 
@@ -186,5 +186,16 @@ func main() {
 
 	plaintext, err := aead.Open(nil, iv, append(ciphertext, tag...), []byte(parts[0]))
 	err2.Check(err)
+
+	return plaintext, nil
+}
+
+func main() {
+	input, err := ioutil.ReadAll(os.Stdin)
+	err2.Check(err)
+	crypter := Crypter{}
+
+	plaintext, err := crypter.Decrypt(string(input))
+
 	fmt.Fprintf(os.Stderr, "%v\n", string(plaintext))
 }
