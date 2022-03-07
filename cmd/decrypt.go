@@ -13,8 +13,7 @@ import (
 func main() {
 	input, err := ioutil.ReadAll(os.Stdin)
 	err2.Check(err)
-
 	plaintext, err := crypter.Decrypt(string(input))
-
-	fmt.Printf("%v\n", string(plaintext))
+	err2.Check(err)
+	fmt.Print(string(plaintext))
 }
