@@ -180,9 +180,16 @@ type jsonProtected struct {
 
 func Decrypt(jwe string) ([]byte, error) {
 	input := []byte(jwe)
+
+	// Had a go at using jose.ParseEncryption but it returns the `ExtraHeaders`
+	// as a tree of interfaces so you have to conert them either by serializing
+	// and deserialing the JSON or using something like `mapstructure`.
+	//
+	// https://github.com/mitchellh/mapstructure
+
+	//
 	dot := bytes.IndexByte(input, byte('.'))
 	header, err := base64.RawURLEncoding.DecodeString(string(input[0:dot]))
-
 	protected := jsonProtected{}
 
 	err = json.Unmarshal(header, &protected)
