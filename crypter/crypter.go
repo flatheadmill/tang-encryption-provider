@@ -1,4 +1,4 @@
-package crypter;
+package crypter
 
 import (
 	"bytes"
@@ -18,8 +18,8 @@ import (
 	"math/big"
 	"net/http"
 
-	"github.com/lainio/err2"
 	"github.com/goware/urlx"
+	"github.com/lainio/err2"
 
 	jose "github.com/go-jose/go-jose/v3"
 	jcipher "github.com/go-jose/go-jose/v3/cipher"
@@ -178,9 +178,7 @@ type jsonProtected struct {
 	EphemeralPublicKey jose.JSONWebKey `json:"epk"`
 }
 
-func Decrypt(jwe string) ([]byte, error) {
-	input := []byte(jwe)
-
+func Decrypt(jwe []byte) ([]byte, error) {
 	// Had a go at using jose.ParseEncryption but it returns the `ExtraHeaders`
 	// as a tree of interfaces so you have to conert them either by serializing
 	// and deserialing the JSON or using something like `mapstructure`.
@@ -188,8 +186,8 @@ func Decrypt(jwe string) ([]byte, error) {
 	// https://github.com/mitchellh/mapstructure
 
 	//
-	dot := bytes.IndexByte(input, byte('.'))
-	header, err := base64.RawURLEncoding.DecodeString(string(input[0:dot]))
+	dot := bytes.IndexByte(jwe, byte('.'))
+	header, err := base64.RawURLEncoding.DecodeString(string(jwe[0:dot]))
 	protected := jsonProtected{}
 
 	err = json.Unmarshal(header, &protected)
@@ -244,7 +242,7 @@ func Decrypt(jwe string) ([]byte, error) {
 
 	key := DeriveECDHES(protected.Encryption, []byte{}, []byte{}, recovered.Key.(*ecdsa.PublicKey), 32)
 
-	parts := strings.Split(string(input), ".")
+	parts := strings.Split(string(jwe), ".")
 	if len(parts) != 5 {
 		err2.Check(fmt.Errorf("compact JWE format must have five parts"))
 	}
