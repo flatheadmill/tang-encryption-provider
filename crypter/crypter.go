@@ -18,11 +18,13 @@ import (
 	"math/big"
 	"net/http"
 
+	"os"
+
 	"github.com/goware/urlx"
 	"github.com/lainio/err2"
 
-	jose "github.com/go-jose/go-jose/v3"
-	jcipher "github.com/go-jose/go-jose/v3/cipher"
+	jose "github.com/flatheadmill/go-jose/v3"
+	jcipher "github.com/flatheadmill/go-jose/v3/cipher"
 )
 
 func base64Decode(encoded string) ([]byte, error) {
@@ -64,6 +66,7 @@ func NewCrypter(url string, fingerprint string) (Crypter, error) {
 	err2.Check(err)
 
 	payload, err := base64.RawURLEncoding.DecodeString(adv["payload"].(string))
+	fmt.Fprintf(os.Stderr, "payload %v\n", string(payload))
 	err2.Check(err)
 
 	// TODO Missing verification. Just want to get it into an object for now.

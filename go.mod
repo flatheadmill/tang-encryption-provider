@@ -4,7 +4,6 @@ go 1.18
 
 require (
 	github.com/docopt/docopt-go v0.0.0-20180111231733-ee0de3bc6815
-	github.com/go-jose/go-jose/v3 v3.0.0
 	github.com/gogo/protobuf v1.3.2
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	github.com/goware/urlx v0.3.1
@@ -16,8 +15,9 @@ require (
 require (
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
+	github.com/flatheadmill/go-jose/v3 v3.0.2 // indirect
+	github.com/go-jose/go-jose/v3 v3.0.0 // indirect
 	github.com/go-ozzo/ozzo-log v0.0.0-20160703175702-610cdd147d9a // indirect
-	github.com/goccy/go-json v0.9.4 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/kelseyhightower/envconfig v1.4.0 // indirect
 	github.com/kpango/fastime v1.1.4 // indirect
@@ -32,5 +32,3 @@ require (
 	google.golang.org/protobuf v1.27.1 // indirect
 	k8s.io/apiserver v0.23.5 // indirect
 )
-
-replace github.com/go-jose/go-jose/v3 => /home/homeport/src/go-jose
