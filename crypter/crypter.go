@@ -105,10 +105,10 @@ Keys:
 	}, nil
 }
 
-func (c *Crypter) Encrypt([]byte) (string, error) {
+func (c *Crypter) Encrypt(plain []byte) (string, error) {
 	encrypter, err := jose.NewEncrypter(jose.A256GCM, c.recipient, &c.encrypterOptions)
 	err2.Check(err)
-	cipher, err := encrypter.Encrypt([]byte("hi\n"))
+	cipher, err := encrypter.Encrypt(plain)
 	err2.Check(err)
 	compact, err := cipher.CompactSerialize()
 	err2.Check(err)
