@@ -50,6 +50,6 @@ func main() {
 	flag.Parse()
 	err := run(*url)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "%w\n", err)
+		fmt.Fprintf(os.Stderr, ">> %v\n", err)
 	}
 }

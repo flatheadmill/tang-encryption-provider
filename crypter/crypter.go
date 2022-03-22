@@ -93,7 +93,7 @@ Keys:
 	extraHeaders["clevis"] = jsonClevis{
 		Plugin: "tang",
 		Tang: jsonTang{
-			Location:      "http://tang:8080",
+			Location:      url,
 			Advertisement: keySet,
 		},
 	}
