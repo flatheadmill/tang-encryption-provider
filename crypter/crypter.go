@@ -1,4 +1,4 @@
-package lestrrat
+package crypter
 
 import (
 	"context"

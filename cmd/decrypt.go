@@ -13,7 +13,8 @@ import (
 	"google.golang.org/grpc"
 
 	pb "k8s.io/apiserver/pkg/storage/value/encrypt/envelope/v1beta1"
-	crypter "github.com/flatheadmill/tang-encryption-provider/lestrrat"
+
+	"github.com/flatheadmill/tang-encryption-provider/crypter"
 )
 
 func decryptWithKMS(socket string) (err error) {
