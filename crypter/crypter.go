@@ -2,6 +2,7 @@ package crypter
 
 import (
 	"bytes"
+	"context"
 	"crypto"
 	"fmt"
 	"strings"
@@ -22,10 +23,20 @@ import (
 
 	"github.com/goware/urlx"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/try"
+
+	"github.com/lestrrat-go/jwx/jwa"
+	"github.com/lestrrat-go/jwx/jwe"
+	"github.com/lestrrat-go/jwx/jwk"
+	"github.com/lestrrat-go/jwx/jws"
 
 	jose "github.com/flatheadmill/go-jose/v3"
 	jcipher "github.com/flatheadmill/go-jose/v3/cipher"
 )
+
+func encode64(buffer []byte) string {
+	return base64.RawURLEncoding.EncodeToString(buffer)
+}
 
 func base64Decode(encoded string) ([]byte, error) {
 	return base64.RawURLEncoding.DecodeString(encoded)
@@ -43,30 +54,27 @@ type jsonClevis struct {
 
 type Crypter struct {
 	recipient        jose.Recipient
+	crypter          *Crypter2
 	encrypterOptions jose.EncrypterOptions
 }
 
-func NewCrypter(url string, fingerprint string) (Crypter, error) {
-	url = strings.TrimSuffix(url, "/")
-	parsed, err := urlx.Parse(url)
-	err2.Check(err)
-	url, err = urlx.Normalize(parsed)
-	err2.Check(err)
-	_, err = base64Decode(fingerprint)
-	err2.Check(err)
-	advGet, err := http.Get(fmt.Sprintf("%s/adv/%s", url, fingerprint))
-	err2.Check(err)
+func NewCrypter(url string, fingerprint string) (crypter Crypter, err error) {
+	defer err2.Return(&err)
+
+	try.To1(base64Decode(fingerprint))
+
+	url = try.To1(urlx.Normalize(try.To1(urlx.Parse(strings.TrimSuffix(url, "/")))))
+	advGet := try.To1(http.Get(fmt.Sprintf("%s/adv/%s", url, fingerprint)))
 	defer advGet.Body.Close()
 
-	advJSON, err := ioutil.ReadAll(advGet.Body)
-	err2.Check(err)
+	advJSON := try.To1(ioutil.ReadAll(advGet.Body))
+
+	crypter2 := try.To1(NewCrypter2(advJSON, fingerprint))
 
 	var adv map[string]interface{}
-	err = json.Unmarshal(advJSON, &adv)
-	err2.Check(err)
+	err2.Check(json.Unmarshal(advJSON, &adv))
 
 	payload, err := base64.RawURLEncoding.DecodeString(adv["payload"].(string))
-	fmt.Fprintf(os.Stderr, "payload %v\n", string(payload))
 	err2.Check(err)
 
 	// TODO Missing verification. Just want to get it into an object for now.
@@ -105,16 +113,15 @@ Keys:
 	return Crypter{
 		encrypterOptions: jose.EncrypterOptions{ExtraHeaders: extraHeaders},
 		recipient:        jose.Recipient{Algorithm: jose.ECDH_ES, Key: deriver.Key},
+		crypter:          crypter2,
 	}, nil
 }
 
-func (c *Crypter) Encrypt(plain []byte) (string, error) {
-	encrypter, err := jose.NewEncrypter(jose.A256GCM, c.recipient, &c.encrypterOptions)
-	err2.Check(err)
-	cipher, err := encrypter.Encrypt(plain)
-	err2.Check(err)
-	compact, err := cipher.CompactSerialize()
-	err2.Check(err)
+func (c *Crypter) Encrypt(plain []byte) (compact string, err error) {
+	defer err2.Return(&err)
+	encrypter := try.To1(jose.NewEncrypter(jose.A256GCM, c.recipient, &c.encrypterOptions))
+	cipher := try.To1(encrypter.Encrypt(plain))
+	compact = try.To1(cipher.CompactSerialize())
 	return compact, nil
 }
 

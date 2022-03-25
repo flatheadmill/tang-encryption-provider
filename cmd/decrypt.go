@@ -6,14 +6,13 @@ import (
 
 	"io/ioutil"
 
-	"github.com/bigeasy/tang-encryption-provider/crypter"
-	"github.com/lainio/err2"
+	"github.com/lainio/err2/try"
+
+	crypter "github.com/flatheadmill/tang-encryption-provider/lestrrat"
 )
 
 func main() {
-	input, err := ioutil.ReadAll(os.Stdin)
-	err2.Check(err)
-	plaintext, err := crypter.Decrypt(input)
-	err2.Check(err)
-	fmt.Print(string(plaintext))
+	input := try.To1(ioutil.ReadAll(os.Stdin))
+	plain := try.To1(crypter.Decrypt(input))
+	fmt.Print(string(plain))
 }
