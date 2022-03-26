@@ -40,7 +40,7 @@ func decryptWithKMS(socket string) (err error) {
 
 	plain := try.To1(client.Decrypt(ctx, &pb.DecryptRequest{Cipher: input}))
 
-	fmt.Printf("%v\n", string(plain.Plain))
+	fmt.Print(string(plain.Plain))
 
 	return nil
 }
