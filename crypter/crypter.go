@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto"
 	"fmt"
-	"os"
 	"strings"
 
 	"encoding/base64"
@@ -113,6 +112,5 @@ func (c *Crypter) Encrypt(plain []byte) (cipher string, err error) {
 
 func Decrypt(cipher []byte) (plain string, err error) {
 	defer err2.Return(&err)
-	fmt.Fprintf(os.Stderr, ">> %s\n", cipher)
 	return string(try.To1(clevis.Decrypt(cipher))), nil
 }
