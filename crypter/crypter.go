@@ -77,7 +77,7 @@ func NewCrypter(url string, thumbprint string) (crypter *Crypter, err error) {
 	if thumbprint != encode64(try.To1(verifyKey.Thumbprint(crypto.SHA256))) {
 		return nil, fmt.Errorf("unable to find key matching %v\n", thumbprint)
 	}
-	try.To1(jws.Verify(advJSON, "ES512", verifyKey))
+	try.To1(jws.Verify(advJSON, jwa.ES512, verifyKey))
 
 	exchangeKey := try.To1(findKey(keySet, jwk.KeyOpDeriveKey))
 	err2.Check(exchangeKey.Set(jwk.KeyOpsKey, jwk.KeyOperationList{}))
