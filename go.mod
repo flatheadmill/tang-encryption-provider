@@ -16,6 +16,8 @@ require (
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
 	github.com/anatol/clevis.go v0.0.0-20220321014421-e3fa2b41d049 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.1 // indirect
+	github.com/francoispqt/gojay v0.0.0-20181220093123-f2cc13a668ca // indirect
+	github.com/francoispqt/onelog v0.0.0-20190306043706-8c2bb31b10a4 // indirect
 	github.com/goccy/go-json v0.9.5 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/go-tpm v0.3.3 // indirect

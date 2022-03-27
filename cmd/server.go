@@ -6,10 +6,12 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/bigeasy/tang-encryption-provider/plugin"
+	"github.com/flatheadmill/tang-encryption-provider/plugin"
 	//	"github.com/lainio/err2"
+	"github.com/francoispqt/onelog"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/lainio/err2/try"
+	"time"
 )
 
 type Specification struct {
@@ -22,7 +24,11 @@ func main() {
 	var spec Specification
 	try.To(envconfig.Process("tang_kms", &spec))
 	fmt.Printf("%v %v\n", spec.Thumbprint, spec.UnixSocket)
-	err := run(try.To1(plugin.New(spec.ServerUrl, spec.Thumbprint, spec.UnixSocket)))
+	logger := onelog.New(os.Stdout, onelog.ALL)
+	logger.Hook(func(e onelog.Entry) { e.String("time", time.Now().Format(time.RFC3339)) })
+	logger.Info("hello")
+	err := run(try.To1(plugin.New(spec.ServerUrl, spec.Thumbprint, spec.UnixSocket, logger)))
+
 	if err != nil {
 		fmt.Printf("exited with error: %T %v\n", err, err)
 	}
