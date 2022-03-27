@@ -8,7 +8,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/bigeasy/tang-encryption-provider/crypter"
+	"github.com/flatheadmill/tang-encryption-provider/crypter"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/try"
 	"google.golang.org/grpc"
@@ -32,7 +32,7 @@ type Plugin struct {
 func New(url string, thumbprint string, socket string, logger *onelog.Logger) (plugin *Plugin, err error) {
 	defer err2.Return(&err)
 	crypt := try.To1(crypter.NewCrypter(url, thumbprint))
-	return &Plugin{crypter: &crypt, socket: socket, logger: logger}, nil
+	return &Plugin{crypter: crypt, socket: socket, logger: logger}, nil
 }
 
 func (g *Plugin) Version(ctx context.Context, request *VersionRequest) (*VersionResponse, error) {
