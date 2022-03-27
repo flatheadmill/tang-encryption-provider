@@ -39,23 +39,19 @@ func (g *Plugin) Version(ctx context.Context, request *VersionRequest) (*Version
 	return &VersionResponse{Version: apiVersion, RuntimeName: runtimeName, RuntimeVersion: runtimeVersion}, nil
 }
 
+// TODO Notify only of error and add metrics.
 func (g *Plugin) Encrypt(ctx context.Context, request *EncryptRequest) (response *EncryptResponse, err error) {
 	defer err2.Return(&err)
-	// TODO This is just to ensure that things are working correctly in
-	// Kubernetes, then we delete this.
-	g.logger.InfoWithFields("encrypting", func(e onelog.Entry) { e.String("plain", string(request.Plain)) })
 	cipher := try.To1(g.crypter.Encrypt(request.Plain))
 	g.logger.InfoWithFields("encrypted", func(e onelog.Entry) { e.String("jwe", string(cipher)) })
 	return &EncryptResponse{Cipher: []byte(cipher)}, nil
 }
 
+// TODO Notify only of error and add metrics.
 func (g *Plugin) Decrypt(ctx context.Context, request *DecryptRequest) (response *DecryptResponse, err error) {
 	defer err2.Return(&err)
 	g.logger.InfoWithFields("decrypting", func(e onelog.Entry) { e.String("jwe", string(request.Cipher)) })
 	plain := try.To1(crypter.Decrypt(request.Cipher))
-	// TODO This is just to ensure that things are working correctly in
-	// Kubernetes, then we delete this.
-	g.logger.InfoWithFields("decrypted", func(e onelog.Entry) { e.String("plain", string(plain)) })
 	return &DecryptResponse{Plain: []byte(plain)}, nil
 }
 
