@@ -105,13 +105,12 @@ func NewCrypter(url string, thumbprint string) (crypter *Crypter, err error) {
 	}, nil
 }
 
-// TODO Return []byte.
-func (c *Crypter) Encrypt(plain []byte) (cipher string, err error) {
+func (c *Crypter) Encrypt(plain []byte) (cipher []byte, err error) {
 	defer err2.Return(&err)
-	return string(try.To1(jwe.Encrypt(plain, jwa.ECDH_ES, c.exchangeKey, jwa.A256GCM, jwa.NoCompress, jwe.WithProtectedHeaders(c.headers)))), nil
+	return try.To1(jwe.Encrypt(plain, jwa.ECDH_ES, c.exchangeKey, jwa.A256GCM, jwa.NoCompress, jwe.WithProtectedHeaders(c.headers))), nil
 }
 
-func Decrypt(cipher []byte) (plain string, err error) {
+func Decrypt(cipher []byte) (plain []byte, err error) {
 	defer err2.Return(&err)
-	return string(try.To1(clevis.Decrypt(cipher))), nil
+	return try.To1(clevis.Decrypt(cipher)), nil
 }

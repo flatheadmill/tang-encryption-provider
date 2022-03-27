@@ -40,7 +40,7 @@ func decryptWithKMS(socket string) (err error) {
 
 	cipher := try.To1(client.Encrypt(ctx, &pb.EncryptRequest{Plain: input}))
 
-	fmt.Printf("%v\n", string(cipher.Cipher))
+	fmt.Printf("%s\n", cipher.Cipher)
 
 	return nil
 }
@@ -50,7 +50,7 @@ func decryptWithTang(url string, thumbprint string) (err error) {
 	input := try.To1(ioutil.ReadAll(os.Stdin))
 	encrypter := try.To1(crypter.NewCrypter(url, thumbprint))
 	compact := try.To1(encrypter.Encrypt(input))
-	fmt.Println(compact)
+	fmt.Printf("%s\n", compact)
 	return nil
 }
 
