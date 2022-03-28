@@ -6,6 +6,7 @@ build-job:
     entrypoint: [""]
   script:
     - echo "Hello, $GITLAB_USER_LOGIN!"
+    - echo "Did run Kaniko."
 
 test-job1:
   stage: test
