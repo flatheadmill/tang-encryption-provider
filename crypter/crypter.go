@@ -20,6 +20,8 @@ import (
 	"github.com/lestrrat-go/jwx/jwe"
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/lestrrat-go/jwx/jws"
+
+	"github.com/flatheadmill/tang-encryption-provider/handler"
 )
 
 func encode64(buffer []byte) string {
@@ -47,7 +49,7 @@ type Crypter struct {
 }
 
 func findKey(keySet jwk.Set, sought jwk.KeyOperation) (key jwk.Key, err error) {
-	defer err2.Return(&err)
+	defer err2.Handle(&err, handler.Handler(&err))
 	ctx := context.Background()
 	for iterator := keySet.Iterate(ctx); iterator.Next(ctx); {
 		key := iterator.Pair().Value.(jwk.Key)
@@ -61,7 +63,7 @@ func findKey(keySet jwk.Set, sought jwk.KeyOperation) (key jwk.Key, err error) {
 }
 
 func NewCrypter(url string, thumbprint string) (crypter *Crypter, err error) {
-	defer err2.Return(&err)
+	defer err2.Handle(&err, handler.Handler(&err))
 
 	try.To1(decode64(thumbprint))
 
@@ -70,6 +72,7 @@ func NewCrypter(url string, thumbprint string) (crypter *Crypter, err error) {
 	defer advGet.Body.Close()
 
 	advJSON := try.To1(ioutil.ReadAll(advGet.Body))
+	fmt.Printf("JSON: %s\n", advJSON)
 
 	message := try.To1(jws.Parse(advJSON))
 	keySet := try.To1(jwk.Parse(message.Payload()))
@@ -106,11 +109,11 @@ func NewCrypter(url string, thumbprint string) (crypter *Crypter, err error) {
 }
 
 func (c *Crypter) Encrypt(plain []byte) (cipher []byte, err error) {
-	defer err2.Return(&err)
+	defer err2.Handle(&err, handler.Handler(&err))
 	return try.To1(jwe.Encrypt(plain, jwa.ECDH_ES, c.exchangeKey, jwa.A256GCM, jwa.NoCompress, jwe.WithProtectedHeaders(c.headers))), nil
 }
 
 func Decrypt(cipher []byte) (plain []byte, err error) {
-	defer err2.Return(&err)
+	defer err2.Handle(&err, handler.Handler(&err))
 	return try.To1(clevis.Decrypt(cipher)), nil
 }

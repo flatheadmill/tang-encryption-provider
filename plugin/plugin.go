@@ -12,6 +12,8 @@ import (
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/try"
 	"google.golang.org/grpc"
+
+	"github.com/flatheadmill/tang-encryption-provider/handler"
 )
 
 const (
@@ -30,7 +32,7 @@ type Plugin struct {
 }
 
 func New(url string, thumbprint string, socket string, logger *onelog.Logger) (plugin *Plugin, err error) {
-	defer err2.Return(&err)
+	defer err2.Handle(&err, handler.Handler(&err))
 	crypt := try.To1(crypter.NewCrypter(url, thumbprint))
 	return &Plugin{crypter: crypt, socket: socket, logger: logger}, nil
 }
@@ -41,7 +43,7 @@ func (g *Plugin) Version(ctx context.Context, request *VersionRequest) (*Version
 
 // TODO Notify only of error and add metrics.
 func (g *Plugin) Encrypt(ctx context.Context, request *EncryptRequest) (response *EncryptResponse, err error) {
-	defer err2.Return(&err)
+	defer err2.Handle(&err, handler.Handler(&err))
 	cipher := try.To1(g.crypter.Encrypt(request.Plain))
 	g.logger.InfoWithFields("encrypted", func(e onelog.Entry) { e.String("jwe", string(cipher)) })
 	return &EncryptResponse{Cipher: []byte(cipher)}, nil
@@ -49,14 +51,14 @@ func (g *Plugin) Encrypt(ctx context.Context, request *EncryptRequest) (response
 
 // TODO Notify only of error and add metrics.
 func (g *Plugin) Decrypt(ctx context.Context, request *DecryptRequest) (response *DecryptResponse, err error) {
-	defer err2.Return(&err)
+	defer err2.Handle(&err, handler.Handler(&err))
 	g.logger.InfoWithFields("decrypting", func(e onelog.Entry) { e.String("jwe", string(request.Cipher)) })
 	plain := try.To1(crypter.Decrypt(request.Cipher))
 	return &DecryptResponse{Plain: []byte(plain)}, nil
 }
 
 func (g *Plugin) setupRPCServer() (err error) {
-	defer err2.Return(&err)
+	defer err2.Handle(&err, handler.Handler(&err))
 
 	// @ implies the use of Linux socket namespace - no file on disk and nothing
 	// to clean-up.
