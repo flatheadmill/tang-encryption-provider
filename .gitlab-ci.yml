@@ -7,6 +7,7 @@ build-job:
   script:
     - echo "Hello, $GITLAB_USER_LOGIN!"
     - echo "Did run Kaniko."
+    - echo "Still working?"
 
 test-job1:
   stage: test
