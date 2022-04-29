@@ -21,11 +21,11 @@ type Specification struct {
 func main() {
 	var spec Specification
 	try.To(envconfig.Process("tang_kms", &spec))
-	fmt.Printf("%v %v\n", spec.Thumbprint, spec.UnixSocket)
-
 	log := logger.New(os.Stdout)
 	log.Console()
-	log.Msg("hello")
+
+	log.MsgWithFields(map[string]interface{}{"thumbprint": spec.Thumbprint, "unix_socket": spec.UnixSocket}, "")
+
 	err := run(try.To1(plugin.New(spec.ServerUrl, spec.Thumbprint, spec.UnixSocket, log)))
 
 	if err != nil {

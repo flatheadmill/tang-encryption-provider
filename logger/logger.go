@@ -25,11 +25,11 @@ func (l *Logger) Console() {
 }
 
 func (l Logger) Msgf(format string, a ...any) {
-	l.zl.WithLevel(l.zl.GetLevel()).Msgf(format, a...)
+	l.logEvent().Msgf(format, a...)
 }
 
 func (l Logger) Msg(msg string) {
-	l.zl.WithLevel(l.zl.GetLevel()).Msg(msg)
+	l.logEvent().Msg(msg)
 }
 
 func (l Logger) Err(err error) {
@@ -41,5 +41,9 @@ func (l Logger) WithFields(fields map[string]interface{}) Logger {
 }
 
 func (l Logger) MsgWithFields(fields map[string]interface{}, msg string) {
-	l.zl.Log().Fields(fields).Msg(msg)
+	l.logEvent().Fields(fields).Msg(msg)
+}
+
+func (l Logger) logEvent() *zerolog.Event {
+	return l.zl.WithLevel(l.zl.GetLevel())
 }
