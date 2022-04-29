@@ -23,7 +23,7 @@ func main() {
 	try.To(envconfig.Process("tang_kms", &spec))
 	fmt.Printf("%v %v\n", spec.Thumbprint, spec.UnixSocket)
 
-	log := logger.New()
+	log := logger.New(os.Stdout)
 	log.Console()
 	log.Msg("hello")
 	err := run(try.To1(plugin.New(spec.ServerUrl, spec.Thumbprint, spec.UnixSocket, log)))

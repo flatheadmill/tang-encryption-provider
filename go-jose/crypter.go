@@ -2,7 +2,6 @@ package crypter
 
 import (
 	"bytes"
-	"context"
 	"crypto"
 	"fmt"
 	"strings"
@@ -19,16 +18,9 @@ import (
 	"math/big"
 	"net/http"
 
-	"os"
-
 	"github.com/goware/urlx"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/try"
-
-	"github.com/lestrrat-go/jwx/jwa"
-	"github.com/lestrrat-go/jwx/jwe"
-	"github.com/lestrrat-go/jwx/jwk"
-	"github.com/lestrrat-go/jwx/jws"
 
 	jose "github.com/flatheadmill/go-jose/v3"
 	jcipher "github.com/flatheadmill/go-jose/v3/cipher"
