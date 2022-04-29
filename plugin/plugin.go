@@ -2,8 +2,6 @@ package plugin
 
 import (
 	"context"
-	"fmt"
-	"github.com/francoispqt/onelog"
 	"net"
 	"os"
 	"strings"
@@ -26,15 +24,24 @@ const (
 type Plugin struct {
 	crypter *crypter.Crypter
 	socket  string
-	logger  *onelog.Logger
+	logger  logger
 	net.Listener
 	*grpc.Server
 }
 
-func New(url string, thumbprint string, socket string, logger *onelog.Logger) (plugin *Plugin, err error) {
+type logger interface {
+	Msg(msg string)
+	Msgf(format string, a ...any)
+	MsgWithFields(fields map[string]interface{}, msg string)
+	Err(err error)
+}
+
+type LogFields map[string]interface{}
+
+func New(url string, thumbprint string, socket string, l logger) (plugin *Plugin, err error) {
 	defer err2.Handle(&err, handler.Handler(&err))
 	crypt := try.To1(crypter.NewCrypter(url, thumbprint))
-	return &Plugin{crypter: crypt, socket: socket, logger: logger}, nil
+	return &Plugin{crypter: crypt, socket: socket, logger: l}, nil
 }
 
 func (g *Plugin) Version(ctx context.Context, request *VersionRequest) (*VersionResponse, error) {
@@ -45,16 +52,16 @@ func (g *Plugin) Version(ctx context.Context, request *VersionRequest) (*Version
 func (g *Plugin) Encrypt(ctx context.Context, request *EncryptRequest) (response *EncryptResponse, err error) {
 	defer err2.Handle(&err, handler.Handler(&err))
 	cipher := try.To1(g.crypter.Encrypt(request.Plain))
-	g.logger.InfoWithFields("encrypted", func(e onelog.Entry) { e.String("jwe", string(cipher)) })
-	return &EncryptResponse{Cipher: []byte(cipher)}, nil
+	g.logger.MsgWithFields(LogFields{"jwe": string(cipher)}, "encrypted")
+	return &EncryptResponse{Cipher: cipher}, nil
 }
 
 // TODO Notify only of error and add metrics.
 func (g *Plugin) Decrypt(ctx context.Context, request *DecryptRequest) (response *DecryptResponse, err error) {
 	defer err2.Handle(&err, handler.Handler(&err))
-	g.logger.InfoWithFields("decrypting", func(e onelog.Entry) { e.String("jwe", string(request.Cipher)) })
+	g.logger.MsgWithFields(LogFields{"jwe": string(request.Cipher)}, "decrypting")
 	plain := try.To1(crypter.Decrypt(request.Cipher))
-	return &DecryptResponse{Plain: []byte(plain)}, nil
+	return &DecryptResponse{Plain: plain}, nil
 }
 
 func (g *Plugin) setupRPCServer() (err error) {
@@ -73,7 +80,7 @@ func (g *Plugin) setupRPCServer() (err error) {
 	}
 
 	g.Listener = try.To1(net.Listen(netProtocol, g.socket))
-	g.logger.Info(fmt.Sprintf("Listening on unix domain socket: %s", g.socket))
+	g.logger.Msgf("Listening on unix domain socket: %s", g.socket)
 
 	g.Server = grpc.NewServer()
 	RegisterKeyManagementServiceServer(g.Server, g)

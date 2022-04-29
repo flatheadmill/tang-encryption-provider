@@ -19,5 +19,5 @@ sleep 1
 
 server=$!
 
-echo hello | ../out/encrypt -grpc $TANG_KMS_UNIX_SOCKET | ../out/decrypt -grpc $TANG_KMS_UNIX_SOCKET
+echo HELLO WORLD! | ../out/encrypt -grpc $TANG_KMS_UNIX_SOCKET | ../out/decrypt -grpc $TANG_KMS_UNIX_SOCKET
 wait $server
