@@ -2,12 +2,12 @@ package main
 
 import (
 	"fmt"
-	"github.com/flatheadmill/tang-encryption-provider/logger"
-	"github.com/flatheadmill/tang-encryption-provider/plugin"
 	"os"
 	"os/signal"
 	"syscall"
-	//	"github.com/lainio/err2"
+
+	"github.com/flatheadmill/tang-encryption-provider/logger"
+	"github.com/flatheadmill/tang-encryption-provider/plugin"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/lainio/err2/try"
 )
