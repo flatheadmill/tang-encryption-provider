@@ -72,7 +72,7 @@ func NewCrypter(url string, thumbprint string) (crypter *Crypter, err error) {
 	defer advGet.Body.Close()
 
 	advJSON := try.To1(ioutil.ReadAll(advGet.Body))
-	fmt.Printf("JSON: %s\n", advJSON)
+	//fmt.Printf("JSON: %s\n", advJSON)
 
 	message := try.To1(jws.Parse(advJSON))
 	keySet := try.To1(jwk.Parse(message.Payload()))

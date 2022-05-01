@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net"
 	"os"
@@ -17,10 +18,10 @@ import (
 	"github.com/flatheadmill/tang-encryption-provider/crypter"
 )
 
-func decryptWithKMS(socket string) (err error) {
+func encryptWithKMS(socket string) (err error) {
 	defer err2.Return(&err)
 
-	input := try.To1(ioutil.ReadAll(os.Stdin))
+	input := try.To1(io.ReadAll(os.Stdin))
 
 	dialer := func(ctx context.Context, addr string) (net.Conn, error) {
 		var d net.Dialer
@@ -45,7 +46,7 @@ func decryptWithKMS(socket string) (err error) {
 	return nil
 }
 
-func decryptWithTang(url string, thumbprint string) (err error) {
+func encryptWithTang(url string, thumbprint string) (err error) {
 	err2.Return(&err)
 	input := try.To1(ioutil.ReadAll(os.Stdin))
 	encrypter := try.To1(crypter.NewCrypter(url, thumbprint))
@@ -63,9 +64,9 @@ func main() {
 	flag.Parse()
 	var err error
 	if *grpc != "" {
-		err = decryptWithKMS(*grpc)
+		err = encryptWithKMS(*grpc)
 	} else {
-		err = decryptWithTang(*tang, *thumbprint)
+		err = encryptWithTang(*tang, *thumbprint)
 	}
 	if err != nil {
 		fmt.Fprintf(os.Stderr, ">> %v\n", err)
