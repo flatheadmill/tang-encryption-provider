@@ -21,8 +21,13 @@ const (
 	runtimeVersion = "0.0.1"
 )
 
+type Crypter interface {
+	Encrypt(plain []byte) (cipher []byte, err error)
+	Decrypt(cipher []byte) (plain []byte, err error)
+}
+
 type Plugin struct {
-	crypter *crypter.Crypter
+	crypter Crypter
 	socket  string
 	logger  logger
 	net.Listener
@@ -38,10 +43,10 @@ type logger interface {
 
 type LogFields map[string]interface{}
 
-func New(url string, thumbprint string, socket string, l logger) (plugin *Plugin, err error) {
+func New(crypter Crypter, socket string, l logger) (plugin *Plugin, err error) {
 	defer err2.Handle(&err, handler.Handler(&err))
-	crypt := try.To1(crypter.NewCrypter(url, thumbprint))
-	return &Plugin{crypter: crypt, socket: socket, logger: l}, nil
+
+	return &Plugin{crypter: crypter, socket: socket, logger: l}, nil
 }
 
 func (g *Plugin) Version(ctx context.Context, request *VersionRequest) (*VersionResponse, error) {
