@@ -3,8 +3,13 @@ package crypter
 import (
 	"context"
 	"crypto"
+	cryptoRand "crypto/rand"
+	"encoding/hex"
 	"fmt"
+	"github.com/pkg/errors"
+	"math/rand"
 	"strings"
+	"time"
 
 	"encoding/base64"
 	"encoding/json"
@@ -113,7 +118,45 @@ func (c *Crypter) Encrypt(plain []byte) (cipher []byte, err error) {
 	return try.To1(jwe.Encrypt(plain, jwa.ECDH_ES, c.exchangeKey, jwa.A256GCM, jwa.NoCompress, jwe.WithProtectedHeaders(c.headers))), nil
 }
 
+func (c *Crypter) Decrypt(cipher []byte) (plain []byte, err error) {
+	return Decrypt(cipher)
+}
+
 func Decrypt(cipher []byte) (plain []byte, err error) {
-	defer err2.Handle(&err, handler.Handler(&err))
-	return try.To1(clevis.Decrypt(cipher)), nil
+	plain, err = clevis.Decrypt(cipher)
+	err = errors.Wrap(err, "failed to decrypt cipher")
+	return
+}
+
+func (c Crypter) Health() error {
+	randomPlaintext := RandomHex(8)
+	cipher, err := c.Encrypt([]byte(randomPlaintext))
+	if err != nil {
+		return errors.Wrap(err, "failed to encrypt random text")
+	}
+
+	decryptedText, err := c.Decrypt(cipher)
+	if err != nil {
+		return errors.Wrap(err, "failed to decrypt random cipher text")
+	}
+	if randomPlaintext != string(decryptedText) {
+		return errors.Errorf("decrypted text does not equal input random text: want: %s got: %s", randomPlaintext, decryptedText)
+	}
+	return nil
+}
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
+
+func RandomHex(n int) string {
+	if n <= 0 {
+		return ""
+	}
+	buf := make([]byte, (n/2)+(n%2))
+	if _, err := cryptoRand.Read(buf); err != nil {
+		fmt.Println(err)
+		return ""
+	}
+	return hex.EncodeToString(buf)[:n]
 }
