@@ -38,12 +38,12 @@ type logger interface {
 	Msg(msg string)
 	Msgf(format string, a ...any)
 	MsgWithFields(fields map[string]interface{}, msg string)
-	Err(err error)
+	Err(err error) bool
 }
 
 type LogFields map[string]interface{}
 
-func New(crypter Crypter, socket string, l logger) (plugin *Plugin, err error) {
+func New(l logger, crypter Crypter, socket string) (plugin *Plugin, err error) {
 	defer err2.Handle(&err, handler.Handler(&err))
 
 	return &Plugin{crypter: crypter, socket: socket, logger: l}, nil

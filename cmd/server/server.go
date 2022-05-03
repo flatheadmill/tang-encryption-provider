@@ -24,26 +24,35 @@ type Specification struct {
 	Thumbprint string
 	UnixSocket string `envconfig:"unix_socket" default:"/var/run/kmsplugin/socket.sock"`
 	HttpPort   string `envconfig:"http_port" default:"8081"`
+	Env        string `default:"local"`
 }
+
+const (
+	EnvLocal = "local"
+	EnvDev   = "dev"
+	EnvProd  = "prod"
+)
 
 func main() {
 	var spec Specification
 	try.To(envconfig.Process("tang_kms", &spec))
 	log := logger.New(os.Stdout)
-	log.Console()
+	if spec.Env == EnvLocal {
+		log.Console()
+	}
 
 	log.MsgWithFields(map[string]interface{}{"thumbprint": spec.Thumbprint, "unix_socket": spec.UnixSocket}, "")
 	crypt := try.To1(crypter.NewCrypter(spec.ServerUrl, spec.Thumbprint))
 
-	httpSvr := setupHttpServer([]HealthComponent{NewHealthComponent(crypt, "tang_crypter")}, spec.HttpPort)
+	httpSvr := setupHttpServer(log, []HealthComponent{NewHealthComponent(crypt, "tang_crypter")}, spec.HttpPort)
 
-	err := run(try.To1(plugin.New(crypt, spec.UnixSocket, log)), httpSvr)
+	err := run(log, try.To1(plugin.New(log, crypt, spec.UnixSocket)), httpSvr)
 	if err != nil {
 		fmt.Printf("exited with error: %T %v\n", err, err)
 	}
 }
 
-func run(plug *plugin.Plugin, api *http.Server) error {
+func run(l logger.Logger, plug *plugin.Plugin, api *http.Server) error {
 	signalsCh := make(chan os.Signal, 1)
 	signal.Notify(signalsCh, syscall.SIGINT, syscall.SIGTERM)
 
@@ -58,7 +67,7 @@ func run(plug *plugin.Plugin, api *http.Server) error {
 	var err error
 	select {
 	case sig := <-signalsCh:
-		fmt.Printf("captured %v, shutting down kms-plugin\n", sig)
+		l.Msgf("captured %v, shutting down kms-plugin", sig)
 	case err = <-rpcErrorChannel:
 	case err = <-httpErrCh:
 	}
@@ -66,12 +75,12 @@ func run(plug *plugin.Plugin, api *http.Server) error {
 	return err
 }
 
-func setupHttpServer(components []HealthComponent, httpPort string) *http.Server {
+func setupHttpServer(l logger.Logger, components []HealthComponent, httpPort string) *http.Server {
 	compHealths := []api.ComponentHealth{}
 	for _, comp := range components {
 		compHealths = append(compHealths, api.ComponentHealth(comp))
 	}
-	healthAPI := api.NewHealthAPI(compHealths...)
+	healthAPI := api.NewHealthAPI(l, compHealths...)
 
 	r := mux.NewRouter()
 	r.HandleFunc("/livez", healthAPI.Health)
