@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/pkg/errors"
 	"net/http"
@@ -33,22 +32,16 @@ func (api *healthAPI) Health(w http.ResponseWriter, r *http.Request) {
 	}
 
 	errStrings := errsToStrings(errs)
+	respBody := []byte("ok")
 	if len(errStrings) > 0 {
-		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
-		respBody, err := json.Marshal(map[string]interface{}{"errors": errStrings})
-		if err != nil {
-			respBody = []byte(fmt.Sprintf("%+v", errors.Wrap(err, "failed to marshal errors to json")))
-
-		}
-		_, err = w.Write(respBody)
-		if err != nil {
-			fmt.Printf("%+v\n", errors.Wrap(err, "failed to write http response"))
-		}
-
-		return
+		//respBody = []byte(strings.Join(errStrings, " - "))
+		respBody = []byte("error")
 	}
-	w.WriteHeader(http.StatusOK)
+	_, err := w.Write(respBody)
+	if err != nil {
+		fmt.Printf("%+v\n", errors.Wrap(err, "failed to write http response"))
+	}
 }
 
 func errsToStrings(errs []error) []string {
