@@ -23,6 +23,7 @@ type Specification struct {
 	ServerUrl  string `envconfig:"server_url"`
 	Thumbprint string
 	UnixSocket string `envconfig:"unix_socket" default:"/var/run/kmsplugin/socket.sock"`
+	HttpPort   string `envconfig:"http_port" default:"8081"`
 }
 
 func main() {
@@ -34,19 +35,15 @@ func main() {
 	log.MsgWithFields(map[string]interface{}{"thumbprint": spec.Thumbprint, "unix_socket": spec.UnixSocket}, "")
 	crypt := try.To1(crypter.NewCrypter(spec.ServerUrl, spec.Thumbprint))
 
-	// setup api routes
-	r := mux.NewRouter()
-	healthAPI := api.NewHealthAPI(NewHealthComponent(crypt, "tang_crypter"))
-	r.HandleFunc("/livez", healthAPI.Health)
-	r.HandleFunc("/readyz", healthAPI.Health)
+	httpSvr := setupHttpServer([]HealthComponent{NewHealthComponent(crypt, "tang_crypter")}, spec.HttpPort)
 
-	err := run(try.To1(plugin.New(crypt, spec.UnixSocket, log)), r)
+	err := run(try.To1(plugin.New(crypt, spec.UnixSocket, log)), httpSvr)
 	if err != nil {
 		fmt.Printf("exited with error: %T %v\n", err, err)
 	}
 }
 
-func run(plug *plugin.Plugin, api http.Handler) error {
+func run(plug *plugin.Plugin, api *http.Server) error {
 	signalsCh := make(chan os.Signal, 1)
 	signal.Notify(signalsCh, syscall.SIGINT, syscall.SIGTERM)
 
@@ -55,8 +52,8 @@ func run(plug *plugin.Plugin, api http.Handler) error {
 		defer rpc.GracefulStop()
 	}
 
-	httpSvr, httpErrCh := startHttpServer(api)
-	defer stopHttpServer(httpSvr)
+	httpErrCh := startHttpServer(api)
+	defer stopHttpServer(api)
 
 	var err error
 	select {
@@ -69,22 +66,35 @@ func run(plug *plugin.Plugin, api http.Handler) error {
 	return err
 }
 
-func stopHttpServer(httpSvr *http.Server) {
-	// handle http server stop
-	httpCtx, httpCancel := context.WithTimeout(context.Background(), time.Second*3)
-	printErr(errors.Wrap(httpSvr.Shutdown(httpCtx), "failed to shutdown http server"))
-	httpCancel()
+func setupHttpServer(components []HealthComponent, httpPort string) *http.Server {
+	compHealths := []api.ComponentHealth{}
+	for _, comp := range components {
+		compHealths = append(compHealths, api.ComponentHealth(comp))
+	}
+	healthAPI := api.NewHealthAPI(compHealths...)
+
+	r := mux.NewRouter()
+	r.HandleFunc("/livez", healthAPI.Health)
+	r.HandleFunc("/readyz", healthAPI.Health)
+
+	return &http.Server{Addr: ":" + httpPort, Handler: r}
 }
 
-func startHttpServer(api http.Handler) (*http.Server, chan error) {
-	httpSvr := &http.Server{Addr: ":8081", Handler: api}
+func startHttpServer(httpSvr *http.Server) chan error {
 	httpErrCh := make(chan error, 1)
 	go func() {
 		if err := httpSvr.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			httpErrCh <- errors.Wrap(err, "http.ListenAndServe erred unexpectedly")
 		}
 	}()
-	return httpSvr, httpErrCh
+	return httpErrCh
+}
+
+func stopHttpServer(httpSvr *http.Server) {
+	// handle http server stop
+	httpCtx, httpCancel := context.WithTimeout(context.Background(), time.Second*3)
+	printErr(errors.Wrap(httpSvr.Shutdown(httpCtx), "failed to shutdown http server"))
+	httpCancel()
 }
 
 func NewHealthComponent(component api.Healther, name string) HealthComponent {
