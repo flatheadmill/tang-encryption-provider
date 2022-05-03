@@ -32,8 +32,12 @@ func (l Logger) Msg(msg string) {
 	l.logEvent().Msg(msg)
 }
 
-func (l Logger) Err(err error) {
+func (l Logger) Err(err error) bool {
+	if err == nil {
+		return false
+	}
 	l.zl.Error().Err(err).Send()
+	return true
 }
 
 func (l Logger) WithFields(fields map[string]interface{}) Logger {

@@ -1,8 +1,6 @@
 package api
 
 import (
-	"encoding/json"
-	"fmt"
 	"github.com/pkg/errors"
 	"net/http"
 )
@@ -17,12 +15,17 @@ type ComponentHealth interface {
 }
 
 type healthAPI struct {
+	l          logger
 	components []ComponentHealth
 	// add logger
 }
 
-func NewHealthAPI(components ...ComponentHealth) healthAPI {
-	return healthAPI{components: components}
+type logger interface {
+	Err(error) bool
+}
+
+func NewHealthAPI(l logger, components ...ComponentHealth) healthAPI {
+	return healthAPI{l: l, components: components}
 }
 
 func (api *healthAPI) Health(w http.ResponseWriter, r *http.Request) {
@@ -32,32 +35,23 @@ func (api *healthAPI) Health(w http.ResponseWriter, r *http.Request) {
 		errs = append(errs, errors.Wrapf(component.Health(), "failed health check for component %q", component.Name()))
 	}
 
-	errStrings := errsToStrings(errs)
-	if len(errStrings) > 0 {
-		w.Header().Set("Content-Type", "application/json")
+	respBody := []byte("ok")
+	if logErrs(api.l, errs) {
 		w.WriteHeader(http.StatusInternalServerError)
-		respBody, err := json.Marshal(map[string]interface{}{"errors": errStrings})
-		if err != nil {
-			respBody = []byte(fmt.Sprintf("%+v", errors.Wrap(err, "failed to marshal errors to json")))
-
-		}
-		_, err = w.Write(respBody)
-		if err != nil {
-			fmt.Printf("%+v\n", errors.Wrap(err, "failed to write http response"))
-		}
-
-		return
+		respBody = []byte("error")
 	}
-	w.WriteHeader(http.StatusOK)
+	_, err := w.Write(respBody)
+	if err != nil {
+		api.l.Err(errors.Wrap(err, "failed to write http response"))
+	}
 }
 
-func errsToStrings(errs []error) []string {
-	errStrs := []string{}
+func logErrs(l logger, errs []error) bool {
+	loggedErr := false
 	for _, err := range errs {
-		if err == nil {
-			continue
+		if l.Err(err) {
+			loggedErr = true
 		}
-		errStrs = append(errStrs, err.Error())
 	}
-	return errStrs
+	return loggedErr
 }
