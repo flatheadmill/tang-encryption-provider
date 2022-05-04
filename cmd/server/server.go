@@ -7,9 +7,11 @@ import (
 	"github.com/flatheadmill/tang-encryption-provider/crypter"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"net/http"
 	"os"
 	"os/signal"
+	"runtime"
 	"syscall"
 	"time"
 
@@ -36,17 +38,17 @@ const (
 func main() {
 	var spec Specification
 	try.To(envconfig.Process("tang_kms", &spec))
-	log := logger.New(os.Stdout)
+	log := logger.New(os.Stdout).WithFields(map[string]interface{}{"go_version": runtime.Version(), "env": spec.Env})
 	if spec.Env == EnvLocal {
 		log.Console()
 	}
 
 	log.MsgWithFields(map[string]interface{}{"thumbprint": spec.Thumbprint, "unix_socket": spec.UnixSocket}, "")
 	crypt := try.To1(crypter.NewCrypter(spec.ServerUrl, spec.Thumbprint))
+	plugin := try.To1(plugin.New(log, crypt, spec.UnixSocket))
+	httpSvr := setupHttpServer(log, []HealthComponent{NewHealthComponent(plugin, "tang-encryption-provider plugin")}, spec.HttpPort)
 
-	httpSvr := setupHttpServer(log, []HealthComponent{NewHealthComponent(crypt, "tang_crypter")}, spec.HttpPort)
-
-	err := run(log, try.To1(plugin.New(log, crypt, spec.UnixSocket)), httpSvr)
+	err := run(log, plugin, httpSvr)
 	if err != nil {
 		fmt.Printf("exited with error: %T %v\n", err, err)
 	}
@@ -85,6 +87,7 @@ func setupHttpServer(l logger.Logger, components []HealthComponent, httpPort str
 	r := mux.NewRouter()
 	r.HandleFunc("/livez", healthAPI.Health)
 	r.HandleFunc("/readyz", healthAPI.Health)
+	r.Handle("/metrics", promhttp.Handler())
 
 	return &http.Server{Addr: ":" + httpPort, Handler: r}
 }

@@ -114,8 +114,8 @@ func NewCrypter(url string, thumbprint string) (crypter *Crypter, err error) {
 }
 
 func (c *Crypter) Encrypt(plain []byte) (cipher []byte, err error) {
-	defer err2.Handle(&err, handler.Handler(&err))
-	return try.To1(jwe.Encrypt(plain, jwa.ECDH_ES, c.exchangeKey, jwa.A256GCM, jwa.NoCompress, jwe.WithProtectedHeaders(c.headers))), nil
+	cipher, err = jwe.Encrypt(plain, jwa.ECDH_ES, c.exchangeKey, jwa.A256GCM, jwa.NoCompress, jwe.WithProtectedHeaders(c.headers))
+	return cipher, errors.Wrap(err, "failed to encrypt plaintext locally with JWE")
 }
 
 func (c *Crypter) Decrypt(cipher []byte) (plain []byte, err error) {
@@ -124,12 +124,12 @@ func (c *Crypter) Decrypt(cipher []byte) (plain []byte, err error) {
 
 func Decrypt(cipher []byte) (plain []byte, err error) {
 	plain, err = clevis.Decrypt(cipher)
-	err = errors.Wrap(err, "failed to decrypt cipher")
+	err = errors.Wrap(err, "failed to decrypt cipher with clevis")
 	return
 }
 
 func (c Crypter) Health() error {
-	randomPlaintext := RandomHex(8)
+	randomPlaintext := randomHex(8)
 	cipher, err := c.Encrypt([]byte(randomPlaintext))
 	if err != nil {
 		return errors.Wrap(err, "failed to encrypt random text")
@@ -149,7 +149,7 @@ func init() {
 	rand.Seed(time.Now().UnixNano())
 }
 
-func RandomHex(n int) string {
+func randomHex(n int) string {
 	if n <= 0 {
 		return ""
 	}
